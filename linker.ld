@@ -23,6 +23,6 @@ SECTIONS
   .bss BLOCK(4K) : ALIGN(4K)
   {
     *(COMMON)
-    *(.bbrew install xbrew install xorrisoorrisoss)
+    *(.bss)
   }
 }
