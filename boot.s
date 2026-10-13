@@ -21,6 +21,16 @@ stack_top:
 .type _start, @function
 _start:
    mov $stack_top, %esp
+
+   call paging_init
+
+   mov $page_directory, %eax
+   mov %eax, %cr3
+
+   mov %cr0, %eax
+   or $0x80000000, %eax
+   mov %eax, %cr0
+
    call kernel_main
 
    cli

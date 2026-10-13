@@ -48,6 +48,19 @@ size_t strlen(const char* str) {
   return len;
 }
 
+// paging define
+#define PAGE_SIZE     4096
+#define PAGE_ENTRIES  1024
+#define PAGE_PRESENT  0x1
+#define PAGE_WRITABLE 0x2
+
+uint32_t page_directory[PAGE_ENTRIES]
+__attribute__((aligned(PAGE_SIZE)));
+
+static uint32_t first_page_table[PAGE_ENTRIES]
+__attribute__((aligned(PAGE_SIZE)));
+
+// vga define
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 #define VGA_MEMORY 0xB8000
@@ -120,7 +133,7 @@ void terminal_putchar(char c) {
     terminal_row++;
     if (terminal_row >= VGA_HEIGHT) {
       terminal_scroll();
-      terminal_row = VGA_WIDTH - 1;
+      terminal_row = VGA_HEIGHT - 1;
     }
   }
   terminal_update_cursor();
@@ -154,14 +167,17 @@ void terminal_write_number(int number) {
   }
 }
 
+void paging_init(void) {
+  for (uint32_t i = 0; i < PAGE_ENTRIES; i++) {
+    page_directory[i] = 0;
+    first_page_table[i] = (i * PAGE_SIZE) | PAGE_PRESENT | PAGE_WRITABLE;
+  }
+
+  page_directory[0] = (uint32_t)first_page_table | PAGE_PRESENT | PAGE_WRITABLE;
+}
+
 void kernel_main(void) {
   terminal_initialize();
   terminal_writestring("Hello, Kernel World!\n");
   terminal_writestring("Test new line check!");
-
-  for (int i = 0; i <= 30; i++) {
-    terminal_writestring("test no: ");
-    terminal_write_number(i);
-    terminal_writestring("\n");
-  }
 }
