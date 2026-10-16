@@ -55,15 +55,15 @@ size_t strlen(const char* str) {
 #define PAGE_WRITABLE 0x2
 
 uint32_t page_directory[PAGE_ENTRIES]
-__attribute__((aligned(PAGE_SIZE)));
+__attribute__((aligned(PAGE_SIZE), section(".bss.bootstrap")));
 
 static uint32_t first_page_table[PAGE_ENTRIES]
-__attribute__((aligned(PAGE_SIZE)));
+__attribute__((aligned(PAGE_SIZE), section(".bss.bootstrap")));
 
 // vga define
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
-#define VGA_MEMORY 0xB8000
+#define VGA_MEMORY 0xC00B8000
 
 size_t terminal_row;
 size_t terminal_column;
@@ -167,6 +167,7 @@ void terminal_write_number(int number) {
   }
 }
 
+__attribute__((section(".bootstrap.text")))
 void paging_init(void) {
   for (uint32_t i = 0; i < PAGE_ENTRIES; i++) {
     page_directory[i] = 0;
@@ -174,10 +175,25 @@ void paging_init(void) {
   }
 
   page_directory[0] = (uint32_t)first_page_table | PAGE_PRESENT | PAGE_WRITABLE;
+
+  // higher half mapping: virtual 0xC0000000 -> physical 0.
+  page_directory[768] = (uint32_t)first_page_table | PAGE_PRESENT | PAGE_WRITABLE;
+}
+
+void paging_remove_identity_mapping(void) {
+    page_directory[0] = 0;
+
+    __asm__ volatile (
+        "mov %0, %%cr3"
+        :
+        : "r" ((uint32_t)page_directory)
+        : "memory"
+    );
 }
 
 void kernel_main(void) {
-  terminal_initialize();
-  terminal_writestring("Hello, Kernel World!\n");
-  terminal_writestring("Test new line check!");
+    terminal_initialize();
+    terminal_writestring("Higher-half kernel is running!\n");
+    paging_remove_identity_mapping();
+    terminal_writestring("Identity mapping removed!\n");
 }

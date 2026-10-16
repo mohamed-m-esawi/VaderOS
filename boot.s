@@ -4,19 +4,19 @@
 .set MAGIC, 0x1BADB002
 .set CHECKSUM,   -(MAGIC + FLAGS)
 
-.section .multiboot
+.section .multiboot,"a"
 .align 4
 .long MAGIC
 .long FLAGS
 .long CHECKSUM
 
-.section .bss
+.section .bootstrap.bss,"aw",@nobits
 .align 16
 stack_bottom:
 .skip 16384
 stack_top:
 
-.section .text
+.section .bootstrap.text
 .global _start
 .type _start, @function
 _start:
@@ -31,10 +31,21 @@ _start:
    or $0x80000000, %eax
    mov %eax, %cr0
 
-   call kernel_main
+   // switch the stack to its higher-half alise.
+   add $0xC0000000, %esp
 
-   cli
-1: hlt
-   jmp 1b
+   // continue excution at the high virtual address
+   mov $higher_half_entry, %eax
+   jmp *%eax
 
 .size _start, . - _start
+
+.section .text
+.global higher_half_entry
+higher_half_entry:
+  call kernel_main
+
+1:
+  cli
+  hlt
+  jmp 1b
