@@ -1,7 +1,6 @@
 ENTRY(_start)
 
 KERNEL_OFFSET = 0xC0000000;
-KERNEL_PHYS   = 0x00200000;
 
 SECTIONS
 {
@@ -30,7 +29,7 @@ SECTIONS
   }
 
   /* High virtual addresses, physical load addresses remain low. */
-  . = KERNEL_OFFSET + KERNEL_PHYS;
+  . += KERNEL_OFFSET; /* + KERNEL_PHYS; */
 
   .text ALIGN(4K) : AT(ADDR(.text) - KERNEL_OFFSET)
   {
